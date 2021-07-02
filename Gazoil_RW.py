@@ -12,6 +12,8 @@ def matrix(fobj):
 
     objects[-1][mat].append(MMatrix)
 
+# git commit mod #
+ 
 def positions(fobj):
     MPositions = om.MPointArray()
     positions = struct.unpack("<I", fobj.read(4))[0]
