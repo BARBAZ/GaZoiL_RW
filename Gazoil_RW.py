@@ -11,19 +11,21 @@ def matrix(fobj):
     ))
 
     objects[-1][mat].append(MMatrix)
-
-# git commit mod #
  
 def positions(fobj):
-    MPositions = om.MPointArray()
+    MPositions = om.MPointArray()    
     positions = struct.unpack("<I", fobj.read(4))[0]
 
     for i in range(positions):
         x , y , z = struct.unpack("<3f", fobj.read(12))
         MPositions.append((x , y , z))
 
-    objects[-1][pos].append(MPositions)
-
+    if(positions):
+        objects[-1][obj].append("msh")
+        objects[-1][pos].append(MPositions)
+    else:
+        objects[-1][obj].append("jnt")
+    
 def normals(fobj):
     MNormals = om.MVectorArray()
     normals = struct.unpack("<I", fobj.read(4))[0]
@@ -35,14 +37,19 @@ def normals(fobj):
     objects[-1][nor].append(MNormals)
 
 def textcoords(fobj):
-    MTextcoords = om.MFloatArray()
+    UValues = om.MFloatArray()
+    VValues = om.MFloatArray()
     textcoords = struct.unpack("<I", fobj.read(4))[0]
-    iter = textcoords * 3
+   
+    for i in range(textcoords):
+        u = struct.unpack("f", fobj.read(4))[0]
+        UValues.append(u)
+        v = struct.unpack("f", fobj.read(4))[0]
+        VValues.append(v)
+        seek(4, elu)
 
-    for i in range(iter):    
-        MTextcoords.append(struct.unpack("f", fobj.read(4))[0])
-       
-    objects[-1][txt].append(MTextcoords)
+    objects[-1][utx].append(UValues)
+    objects[-1][vtx].append(VValues)
 
 def faces(fobj):
     MFaces = om.MUintArray()
@@ -93,7 +100,7 @@ def binds(fobj):
     binds = struct.unpack("<I", fobj.read(4))[0]
     
     for i in range(binds):
-        influences = struct.unpack("<I", fobj.read(4))[0]
+        influences = struct.unpack("<I", fobj.read(4))[0] # numbers of bones which affects this vertex 
         for j in range(influences):
             seek(2, fobj)
             bone = struct.unpack("<H", fobj.read(2))[0] # bone idx
@@ -137,30 +144,43 @@ def header(fobj):
     print(eluversion % (version))
     fobj.seek(4, os.SEEK_CUR)
     objcount = struct.unpack("<I", fobj.read(4))[0]
-    return version, objcount 
+
+    return version, objcount
 
 def meta0(fobj):
     namelen = struct.unpack("<I", fobj.read(4))[0]
-    name = fobj.read(namelen)
-    print(objectstr % (str(name)))
+    tmp = fobj.read(namelen)
+    name = strbytes(tmp)
+    print(objectstr % (name))
     parentlen = struct.unpack("<I", fobj.read(4))[0]
-    parent = fobj.read(parentlen)
+    tmp = fobj.read(parentlen)
+    parent = strbytes(tmp)
     parentidx = struct.unpack("<I", fobj.read(4))[0]
-    objects[-1][nam].append(str(name))
-    objects[-1][par].append(str(parent))
+    objects[-1][nam].append(name)
+    objects[-1][par].append(parent)
     objects[-1][pidx].append(parentidx)
 
 def meta1(fobj):
     namelen = struct.unpack("<I", fobj.read(4))[0]
-    name = fobj.read(namelen)
-    print(objectstr % (str(name)))
+    tmp = fobj.read(namelen)
+    name = strbytes(tmp)
+    print(objectstr % (name))
     parentidx = struct.unpack("<I", fobj.read(4))[0]
     parentlen = struct.unpack("<I", fobj.read(4))[0]
-    parent = fobj.read(parentlen)
-    objects[-1][nam].append(str(name))
-    objects[-1][par].append(str(parent))
+    tmp = fobj.read(parentlen)
+    parent = strbytes(tmp)
+    objects[-1][nam].append(name)
+    objects[-1][par].append(parent)
     objects[-1][pidx].append(parentidx)
 
+def strbytes(strs):
+    tmp0 = bytes.decode(strs)
+    tmp1 = tmp0.replace('\x00','')
+    strs = tmp1.replace(" ","_")
+    if(strs.isdigit()):
+        stuple = ("Object",strs)
+        strs = "".join(stuple)
+    return strs
 
 ##### Parsing Jumps #####
 
@@ -305,7 +325,7 @@ exterr = "Incorrect or corrupted file format ! Please select a correct .elu file
 err = "Internal error ! Contact admin"
 eluversion = "Elu Version : %s"
 objectstr = "Object : %s"
-curpos = 'Done ! file curpos at %x'
+curpos = 'Done ! file curpos at %x' # debug
 comperr = "no support for this version of elu format yet !"
 
 # Arrays
@@ -316,24 +336,9 @@ objects = []
 
 class Array:
 
-    def config(self):
-        self.append([])
-        for j in range(len(Index)):
-            self[-1].append([])
-
     def extend(self):
         self.append([])
         for j in range(len(Index)):
-            self[-1].append([])
-
-    def facesConfig(self):
-        self.append([])
-        for j in range(2):
-            self[-1].append([])
-
-    def facesExtend(self):
-        self.append([])
-        for j in range(2):
             self[-1].append([])
 
     def log(self):
@@ -343,26 +348,29 @@ class Array:
 
 # Enums
 
-class Index(IntEnum): ## Same name on arrays => 2nd funcdecl overwrites the 1st => 
+class Index(IntEnum):
 
-    name = 0
-    parent = 1
-    parentidx = 2
-    matrix = 3
-    positions = 4
-    normals = 5
-    tangents = 6
-    textcoords = 7
-    textcoords2 = 8
-    faces = 9
-    connects = 10
-    vertexindices = 11
-    facesindices = 12
-    blendvertices = 13
+    objtype = 0 
+    name = 1
+    parent = 2
+    parentidx = 3
+    matrix = 4
+    positions = 5
+    normals = 6
+    tangents = 7
+    utextcoords = 8
+    vtextcoords = 9
+    faces = 10
+    connects = 11
+    vertexindices = 12
+    facesindices = 13
+    blendvertices = 14
+    dagpath = 15
     
-    
+
 # Aliases
 
+obj  = Index.objtype
 nam  = Index.name
 par  = Index.parent
 pidx = Index.parentidx 
@@ -370,14 +378,14 @@ mat  = Index.matrix
 pos  = Index.positions
 nor  = Index.normals
 tan  = Index.tangents
-txt  = Index.textcoords
-txt2 = Index.textcoords2
+utx  = Index.utextcoords
+vtx  = Index.vtextcoords
 fac  = Index.faces
 con  = Index.connects
 vind = Index.vertexindices
 find = Index.facesindices
 bvtx = Index.blendvertices
-
+dag  = Index.dagpath
 
 # Functions definitions 
 
@@ -393,13 +401,51 @@ def openfile():
     print ("Opening file : %s \nFrom : %s " % (filename, realpath))
     return file_object
 
+def objgen():
+
+    for j in range(len(objects)):
+        
+        if(objects[j][obj][0] == "jnt"):
+            cmds.select(all=True, deselect=True)
+            cmds.joint(name=objects[j][nam][0])
+            selection = om.MSelectionList()
+            selection.add(objects[j][nam][0])
+            dagpath = selection.getDagPath(0)
+            tnode = om.MFnTransform(dagpath)
+            tmtx = om.MTransformationMatrix(objects[j][mat][0])
+            tnode.setTransformation(tmtx)
+
+        elif(objects[j][obj][0] == "msh"):
+            mesh = om.MFnMesh().create(objects[j][pos][0],objects[j][fac][0],objects[j][con][0])
+            dpnode = om.MFnDependencyNode(mesh)
+            dpnode.setName(objects[j][nam][0])
+            selection = om.MSelectionList()
+            selection.add(objects[j][nam][0])
+            dagpath = selection.getDagPath(0)
+            tnode = om.MFnTransform(dagpath)
+            tmtx = om.MTransformationMatrix(objects[j][mat][0])
+            tnode.setTransformation(tmtx)
+
+        else:
+            print(err)
+
+        objects[j][dag].append(dagpath)
+
+def parent():
+
+    for j in range(len(objects)):
+
+        if(objects[j][pidx][0] != 0xFFFFFFFF):
+            cmds.parent(objects[j][nam][0], objects[objects[j][pidx][0]][nam][0], relative=True)
+
+
 ########################################################################
 ##### code instructions #####
 
 print(title)
 elu = openfile()
+Array.extend(objects)
 headerargs = header(elu)
-Array.config(objects)
 
 for i in range(headerargs[1]):
     if(headerargs[0] == "0x5011"):
@@ -423,7 +469,9 @@ for i in range(headerargs[1]):
 
 print("EOF")
 
-#Array.log(objects)
+objgen()
+parent()
+Array.log(objects)
 elu.close()
 print("EOS")
 
