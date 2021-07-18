@@ -13,7 +13,7 @@ def matrix(fobj):
     objects[-1][mat].append(MMatrix)
  
 def positions(fobj):
-    MPositions = om.MPointArray()    
+    MPositions = om.MPointArray()
     positions = struct.unpack("<I", fobj.read(4))[0]
 
     for i in range(positions):
@@ -45,7 +45,7 @@ def textcoords(fobj):
         u = struct.unpack("f", fobj.read(4))[0]
         UValues.append(u)
         v = struct.unpack("f", fobj.read(4))[0]
-        VValues.append(v)
+        VValues.append(1.0 - v)
         seek(4, elu)
 
     objects[-1][utx].append(UValues)
@@ -54,6 +54,7 @@ def textcoords(fobj):
 def faces(fobj):
     MFaces = om.MUintArray()
     MConnects = om.MUintArray()
+    MFacestextcoords = om.MUintArray()
 
     faces = struct.unpack("<I", fobj.read(4))[0]
 
@@ -67,15 +68,18 @@ def faces(fobj):
             for j in range(faces_idx):
                 faces_ord, textcoords = struct.unpack("<2H", fobj.read(4))
                 MConnects.append(faces_ord)
+                MFacestextcoords.append(textcoords)
                 seek(8, fobj)
             seek(2, fobj)
     
     objects[-1][fac].append(MFaces)
     objects[-1][con].append(MConnects)
+    objects[-1][ftxt].append(MFacestextcoords)
 
 def faces14(fobj):
     MFaces = om.MUintArray()
     MConnects = om.MUintArray()
+    MFacestextcoords = om.MUintArray()
 
     faces = struct.unpack("<I", fobj.read(4))[0]
 
@@ -89,11 +93,14 @@ def faces14(fobj):
             for j in range(faces_idx):
                 faces_ord, textcoords = struct.unpack("<2H", fobj.read(4))
                 MConnects.append(faces_ord)
+                MFacestextcoords.append(textcoords)
                 seek(10, fobj)
             seek(2, fobj)
     
     objects[-1][fac].append(MFaces)
     objects[-1][con].append(MConnects)
+    objects[-1][ftxt].append(MFacestextcoords)
+
 
 def binds(fobj):
     binds = []
@@ -177,6 +184,7 @@ def strbytes(strs):
     tmp0 = bytes.decode(strs)
     tmp1 = tmp0.replace('\x00','')
     strs = tmp1.replace(" ","_")
+
     if(strs.isdigit()):
         stuple = ("Object",strs)
         strs = "".join(stuple)
@@ -206,7 +214,7 @@ def ukn64(fobj):
 
 ##### Objects Parsers #####
 
-def import_5011(fobj): # functional for parsing
+def import_5011(fobj):
     seek(8, fobj)
     matrix(fobj)
     seek(4, fobj)
@@ -325,12 +333,16 @@ exterr = "Incorrect or corrupted file format ! Please select a correct .elu file
 err = "Internal error ! Contact admin"
 eluversion = "Elu Version : %s"
 objectstr = "Object : %s"
-curpos = 'Done ! file curpos at %x' # debug
+curpos = 'Done ! file curpos at %x' # debug string
 comperr = "no support for this version of elu format yet !"
 
 # Arrays
 
 objects = []
+
+# Objects definitions
+
+meshFn = om.MFnMesh()
 
 ##### Classes #####
 
@@ -350,7 +362,7 @@ class Array:
 
 class Index(IntEnum):
 
-    objtype = 0 
+    objtype = 0
     name = 1
     parent = 2
     parentidx = 3
@@ -366,14 +378,14 @@ class Index(IntEnum):
     facesindices = 13
     blendvertices = 14
     dagpath = 15
+    facetextcoords = 16
     
-
 # Aliases
 
 obj  = Index.objtype
 nam  = Index.name
 par  = Index.parent
-pidx = Index.parentidx 
+pidx = Index.parentidx
 mat  = Index.matrix
 pos  = Index.positions
 nor  = Index.normals
@@ -386,8 +398,12 @@ vind = Index.vertexindices
 find = Index.facesindices
 bvtx = Index.blendvertices
 dag  = Index.dagpath
+ftxt = Index.facetextcoords
 
-# Functions definitions 
+# Functions definitions
+
+def new(): # Debug reset UI
+    cmds.file(new=True, force=True)
 
 def openfile():
     fullpath = cmds.fileDialog2(fileMode=1, ff=ffilters)
@@ -416,7 +432,13 @@ def objgen():
             tnode.setTransformation(tmtx)
 
         elif(objects[j][obj][0] == "msh"):
-            mesh = om.MFnMesh().create(objects[j][pos][0],objects[j][fac][0],objects[j][con][0])
+            print(objects[j][nam][0])
+            cmds.select(all=True, deselect=True)
+            mesh = meshFn.create(objects[j][pos][0],objects[j][fac][0],objects[j][con][0])
+            if(len(objects[j][utx][0]) & len(objects[j][vtx][0])):
+                meshFn.renameUVSet('map1',objects[j][nam][0])
+                meshFn.setUVs(objects[j][utx][0],objects[j][vtx][0],uvSet=objects[j][nam][0])
+                meshFn.assignUVs(objects[j][fac][0],objects[j][ftxt][0],uvSet=objects[j][nam][0])
             dpnode = om.MFnDependencyNode(mesh)
             dpnode.setName(objects[j][nam][0])
             selection = om.MSelectionList()
@@ -444,26 +466,25 @@ def parent():
 
 print(title)
 elu = openfile()
-Array.extend(objects)
 headerargs = header(elu)
 
 for i in range(headerargs[1]):
     if(headerargs[0] == "0x5011"):
+        Array.extend(objects)
         meta0(elu)
         import_5011(elu)
-        Array.extend(objects)
     elif(headerargs[0] == "0x5012"):
+        Array.extend(objects)
         meta0(elu)
         import_5012(elu)
-        Array.extend(objects)
     elif(headerargs[0] == "0x5013"):
+        Array.extend(objects)
         meta1(elu)
         import_5013(elu)
-        Array.extend(objects)
     elif(headerargs[0] == "0x5014"):
+        Array.extend(objects)
         meta1(elu)
         import_5014(elu)
-        Array.extend(objects)
     else:
         print(err)
 
@@ -471,7 +492,7 @@ print("EOF")
 
 objgen()
 parent()
-Array.log(objects)
+#Array.log(objects)
 elu.close()
 print("EOS")
 
