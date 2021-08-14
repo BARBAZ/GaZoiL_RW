@@ -7,7 +7,7 @@ GaZoil_RW roadmap aims at :
 GazoiL was mainly coded with python2 due to Autodesk Maya's 2020 limitations
 
 - pep8 code readability port
-GazoiL was writen following no specific rules of code writing / Syntax /  Naming conventions
+GazoiL was written following no specific rules of code writing / Syntax /  Naming conventions
 GaZoiL_RW project aim at code reability for easier collaborative work and better code maintainabilty
 
 - Overall rework of some core functions of Gazoil
