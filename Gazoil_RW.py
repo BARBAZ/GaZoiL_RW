@@ -493,6 +493,7 @@ print("EOF")
 objgen()
 parent()
 #Array.log(objects)
+#debug
 elu.close()
 print("EOS")
 
