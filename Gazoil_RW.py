@@ -105,13 +105,17 @@ def faces14(fobj):
 def binds(fobj):
     binds = []
     binds = struct.unpack("<I", fobj.read(4))[0]
-    
+
     for i in range(binds):
-        influences = struct.unpack("<I", fobj.read(4))[0] # numbers of bones which affects this vertex 
+        influences = struct.unpack("<I", fobj.read(4))[0] # numbers of bones which affects this vertex
+        objects[-1][inf].append(influences)
         for j in range(influences):
             seek(2, fobj)
             bone = struct.unpack("<H", fobj.read(2))[0] # bone idx
             weight = struct.unpack("f", fobj.read(4))   # bone to vtx weight
+            objects[-1][bon].append(bone)
+            objects[-1][wei].append(weight)
+
 
 def vertex(fobj):
     vertex = []
@@ -290,6 +294,7 @@ def import_5014(fobj):
     faces14(fobj)
     ukn12(fobj)
     seek(4, fobj)
+    #print("Offset : %x" % (fobj.tell()))
     binds(fobj)
     seek(4, fobj)
     vertex14(fobj)
@@ -379,6 +384,10 @@ class Index(IntEnum):
     blendvertices = 14
     dagpath = 15
     facetextcoords = 16
+    influences = 17
+    bone = 18
+    weight = 19
+
     
 # Aliases
 
@@ -399,6 +408,9 @@ find = Index.facesindices
 bvtx = Index.blendvertices
 dag  = Index.dagpath
 ftxt = Index.facetextcoords
+inf  = Index.influences 
+bon  = Index.bone
+wei  = Index.weight
 
 # Functions definitions
 
@@ -432,7 +444,6 @@ def objgen():
             tnode.setTransformation(tmtx)
 
         elif(objects[j][obj][0] == "msh"):
-            print(objects[j][nam][0])
             cmds.select(all=True, deselect=True)
             mesh = meshFn.create(objects[j][pos][0],objects[j][fac][0],objects[j][con][0])
             if(len(objects[j][utx][0]) & len(objects[j][vtx][0])):
@@ -454,12 +465,31 @@ def objgen():
         objects[j][dag].append(dagpath)
 
 def parent():
-
     for j in range(len(objects)):
 
         if(objects[j][pidx][0] != 0xFFFFFFFF):
             cmds.parent(objects[j][nam][0], objects[objects[j][pidx][0]][nam][0], relative=True)
 
+def skincluster():
+    for j in range(len(objects)):
+        if(objects[j][obj][0] == "msh"):
+            skincluster = "%s_SC" % (objects[j][nam][0])
+            print(skincluster)
+            cmds.skinCluster("Bip01",objects[j][nam][0],n=skincluster)
+
+'''
+def skinpercent():
+    for j in range(len(objects)):
+        if(objects[j][obj][0] == "msh"):
+            for k in range(len(objects[j][pos][0])):
+                #debug
+                #cmds.skinPercent("%s_SC" % (objects[j][nam][0]),"%s.vtx",objects[k][bvtx][0])  
+                
+                #cmds.skinPercent( '%s_SC'%(objects[j][nam][0]), '%s.vtx[%s]'%(objects[j][nam][0],k), transformValue=[('%s'%(objects[bon][k][0]),objects[wei][k])])
+                #print(objects[j][wei])
+                #print(objects[j][bon])
+                #cmds.skinPercent( 'skinCluster1', 'pPlane1.vtx[100]', transformValue=[('joint1', 0.2), ('joint3', 0.8)])
+'''               
 
 ########################################################################
 ##### code instructions #####
@@ -492,9 +522,11 @@ print("EOF")
 
 objgen()
 parent()
-#Array.log(objects)
-#debug
 elu.close()
+
+skincluster()
+#skinpercent()
+
 print("EOS")
 
 ########################################################################
