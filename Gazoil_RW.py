@@ -294,7 +294,7 @@ def import_5014(fobj):
     faces14(fobj)
     ukn12(fobj)
     seek(4, fobj)
-    #print("Offset : %x" % (fobj.tell()))
+    print("Offset : %x" % (fobj.tell()))
     binds(fobj)
     seek(4, fobj)
     vertex14(fobj)
