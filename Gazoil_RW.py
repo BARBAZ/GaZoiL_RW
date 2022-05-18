@@ -105,7 +105,8 @@ def faces14(fobj):
 def binds(fobj):
     binds = []
     binds = struct.unpack("<I", fobj.read(4))[0]
-
+    objects[-1][wvtx].append(binds)
+    
     for i in range(binds):
         influences = struct.unpack("<I", fobj.read(4))[0] # numbers of bones which affects this vertex
         objects[-1][inf].append(influences)
@@ -115,6 +116,7 @@ def binds(fobj):
             weight = struct.unpack("f", fobj.read(4))   # bone to vtx weight
             objects[-1][bon].append(bone)
             objects[-1][wei].append(weight)
+            
 
 
 def vertex(fobj):
@@ -294,7 +296,6 @@ def import_5014(fobj):
     faces14(fobj)
     ukn12(fobj)
     seek(4, fobj)
-    print("Offset : %x" % (fobj.tell()))
     binds(fobj)
     seek(4, fobj)
     vertex14(fobj)
@@ -384,9 +385,11 @@ class Index(IntEnum):
     blendvertices = 14
     dagpath = 15
     facetextcoords = 16
-    influences = 17
-    bone = 18
-    weight = 19
+    weightedvertices = 17
+    influences = 18
+    bone = 19
+    weight = 20
+    skincluster = 21
 
     
 # Aliases
@@ -411,6 +414,8 @@ ftxt = Index.facetextcoords
 inf  = Index.influences 
 bon  = Index.bone
 wei  = Index.weight
+sclu = Index.skincluster
+wvtx = Index.weightedvertices
 
 # Functions definitions
 
@@ -474,22 +479,18 @@ def skincluster():
     for j in range(len(objects)):
         if(objects[j][obj][0] == "msh"):
             skincluster = "%s_SC" % (objects[j][nam][0])
-            print(skincluster)
+            objects[j][sclu].append(skincluster)
             cmds.skinCluster("Bip01",objects[j][nam][0],n=skincluster)
 
-'''
+
 def skinpercent():
     for j in range(len(objects)):
         if(objects[j][obj][0] == "msh"):
-            for k in range(len(objects[j][pos][0])):
+            for k in range(objects[j][wvtx][0]):
+                print(k)
                 #debug
-                #cmds.skinPercent("%s_SC" % (objects[j][nam][0]),"%s.vtx",objects[k][bvtx][0])  
-                
-                #cmds.skinPercent( '%s_SC'%(objects[j][nam][0]), '%s.vtx[%s]'%(objects[j][nam][0],k), transformValue=[('%s'%(objects[bon][k][0]),objects[wei][k])])
-                #print(objects[j][wei])
-                #print(objects[j][bon])
                 #cmds.skinPercent( 'skinCluster1', 'pPlane1.vtx[100]', transformValue=[('joint1', 0.2), ('joint3', 0.8)])
-'''               
+               
 
 ########################################################################
 ##### code instructions #####
@@ -525,10 +526,8 @@ parent()
 elu.close()
 
 skincluster()
-#skinpercent()
+skinpercent()
 
 print("EOS")
 
 ########################################################################
-
-# git update 
