@@ -110,12 +110,16 @@ def binds(fobj):
     for i in range(binds):
         influences = struct.unpack("<I", fobj.read(4))[0] # numbers of bones which affects this vertex
         objects[-1][inf].append(influences)
+        bidx = []
+        wval = []
         for j in range(influences):
             seek(2, fobj)
             bone = struct.unpack("<H", fobj.read(2))[0] # bone idx
+            bidx.append(bone)
             weight = struct.unpack("f", fobj.read(4))   # bone to vtx weight
-            objects[-1][bon].append(bone)
-            objects[-1][wei].append(weight)
+            wval.append(weight)
+        objects[-1][bon].append(bidx)
+        objects[-1][wei].append(wval)
             
 
 
@@ -488,9 +492,20 @@ def skinpercent():
         if(objects[j][obj][0] == "msh"):
             for k in range(objects[j][wvtx][0]):
                 print(k)
+                #cmds.skinPercent( objects[j][sclu][0], strfunc(objects[j][nam][0], k), transformValue=[(, 0.2), ('joint3', 0.8)])
                 #debug
                 #cmds.skinPercent( 'skinCluster1', 'pPlane1.vtx[100]', transformValue=[('joint1', 0.2), ('joint3', 0.8)])
                
+def strfunc(string, ite):
+    dot = "."
+    vtx = "vtx"
+    opbrace = "["
+    endbrace = "]"
+    num = str(ite)
+    strtuple = (string, dot, vtx, opbrace, num, endbrace)
+    funcstr = "".join(strtuple)
+    return funcstr
+
 
 ########################################################################
 ##### code instructions #####
@@ -526,7 +541,7 @@ parent()
 elu.close()
 
 skincluster()
-skinpercent()
+#skinpercent()
 
 print("EOS")
 
