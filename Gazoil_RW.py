@@ -491,8 +491,7 @@ def skinpercent():
     for j in range(len(objects)):
         if(objects[j][obj][0] == "msh"):
             for k in range(objects[j][wvtx][0]):
-                print(k)
-                #cmds.skinPercent( objects[j][sclu][0], strfunc(objects[j][nam][0], k), transformValue=[(, 0.2), ('joint3', 0.8)])
+                cmds.skinPercent( objects[j][sclu][0], strfunc(objects[j][nam][0], k), transformValue=[weifunc(j,k)])
                 #debug
                 #cmds.skinPercent( 'skinCluster1', 'pPlane1.vtx[100]', transformValue=[('joint1', 0.2), ('joint3', 0.8)])
                
@@ -505,6 +504,12 @@ def strfunc(string, ite):
     strtuple = (string, dot, vtx, opbrace, num, endbrace)
     funcstr = "".join(strtuple)
     return funcstr
+
+'''def weifunc(midx, ite)
+    for j in range(objects[midx][bon][])
+    objects[midx][][]
+    weistr = 
+    return weistr'''
 
 
 ########################################################################
