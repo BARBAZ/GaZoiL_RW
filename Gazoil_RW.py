@@ -491,11 +491,9 @@ def skinpercent():
     for j in range(len(objects)):
         if(objects[j][obj][0] == "msh"):
             for k in range(objects[j][wvtx][0]):
-                cmds.skinPercent( objects[j][sclu][0], strfunc(objects[j][nam][0], k), transformValue=[weifunc(j,k)])
-                #debug
-                #cmds.skinPercent( 'skinCluster1', 'pPlane1.vtx[100]', transformValue=[('joint1', 0.2), ('joint3', 0.8)])
+                cmds.skinPercent( objects[j][sclu][0], spvertex(objects[j][nam][0], k), transformValue= spweight(j,k) )
                
-def strfunc(string, ite):
+def spvertex(string, ite):
     dot = "."
     vtx = "vtx"
     opbrace = "["
@@ -505,11 +503,18 @@ def strfunc(string, ite):
     funcstr = "".join(strtuple)
     return funcstr
 
-'''def weifunc(midx, ite)
-    for j in range(objects[midx][bon][])
-    objects[midx][][]
-    weistr = 
-    return weistr'''
+def spweight(idx, ite):
+    List = []
+    for j in range(objects[idx][inf][ite]):
+        intbone = objects[idx][bon][ite][j]
+        strbone = objects[intbone][nam][0]
+        print(strbone)
+        weight = objects[idx][wei][ite][j][0]
+        List.append((strbone,weight))
+        
+    tuple(List)
+    return List
+
 
 
 ########################################################################
@@ -546,7 +551,7 @@ parent()
 elu.close()
 
 skincluster()
-#skinpercent()
+skinpercent()
 
 print("EOS")
 
