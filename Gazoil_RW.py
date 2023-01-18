@@ -15,6 +15,7 @@ def matrix(fobj):
 def positions(fobj):
     MPositions = om.MPointArray()
     positions = struct.unpack("<I", fobj.read(4))[0]
+    print("positions count : %s" % (positions)) # debug
 
     for i in range(positions):
         x , y , z = struct.unpack("<3f", fobj.read(12))
@@ -29,7 +30,8 @@ def positions(fobj):
 def normals(fobj):
     MNormals = om.MVectorArray()
     normals = struct.unpack("<I", fobj.read(4))[0]
-    
+    print("Normals count : %s" % (normals)) #debug
+
     for i in range(normals):
         nx , ny , nz = struct.unpack("<3f", fobj.read(12))
         MNormals.append(( nx , ny , nz ))
@@ -294,6 +296,7 @@ def import_5014(fobj):
     textcoords(fobj)
     ukn12(fobj)
     ukn12(fobj)
+    print("curpos: %x" % (fobj.tell()))    #debug
     normals(fobj)
     ukn16(fobj)
     ukn12(fobj)
@@ -348,7 +351,7 @@ comperr = "no support for this version of elu format yet !"
 
 # Arrays
 
-objects = []
+#objects = [] #Debug !
 
 # Objects definitions
 
@@ -362,6 +365,7 @@ class Array:
         self.append([])
         for j in range(len(Index)):
             self[-1].append([])
+        print("Array Extended ! ") #debug
 
     def log(self):
         print("logging array")
@@ -492,7 +496,7 @@ def skinpercent():
         if(objects[j][obj][0] == "msh"):
             for k in range(objects[j][wvtx][0]):
                 cmds.skinPercent( objects[j][sclu][0], spvertex(objects[j][nam][0], k), transformValue= spweight(j,k) )
-               
+        print('done!')   
 def spvertex(string, ite):
     dot = "."
     vtx = "vtx"
@@ -508,7 +512,7 @@ def spweight(idx, ite):
     for j in range(objects[idx][inf][ite]):
         intbone = objects[idx][bon][ite][j]
         strbone = objects[intbone][nam][0]
-        print(strbone)
+        #print(strbone)
         weight = objects[idx][wei][ite][j][0]
         List.append((strbone,weight))
         
@@ -546,12 +550,13 @@ for i in range(headerargs[1]):
 
 print("EOF")
 
-objgen()
-parent()
-elu.close()
+#objgen()
+#print("Object generated") #debug
+#parent()
+#elu.close()
 
-skincluster()
-skinpercent()
+#skincluster()
+#skinpercent()
 
 print("EOS")
 
