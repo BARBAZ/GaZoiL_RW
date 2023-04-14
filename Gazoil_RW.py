@@ -154,10 +154,10 @@ def face(fobj):
     for i in range(face):
         seek(2, fobj)    
 
-def header(fobj):
+def elu_header(fobj):
     magic = struct.unpack("<I", fobj.read(4))[0]
     if(magic != 17297504):
-        print(exterr)
+        print(elu_exterr)
         sys.exit()
     version = hex(struct.unpack("<I", fobj.read(4))[0])
     print(eluversion % (version))
@@ -165,6 +165,12 @@ def header(fobj):
     objcount = struct.unpack("<I", fobj.read(4))[0]
 
     return version, objcount
+
+def xsm_header(fobj):
+    magic = struct.unpack("<I", fobj.read(4))[0]
+    if(magic != 541938520):
+        print(xsm_exterr)
+        sys.exit()
 
 def meta0(fobj):
     namelen = struct.unpack("<I", fobj.read(4))[0]
@@ -340,9 +346,10 @@ import maya.api.OpenMaya as om
 
 # Strings
 
-ffilters = "RS3 Models Files (*.elu) ;; All Files (*.*)"
+ffilters = "RS3 Models Files (*.elu) ;; XSM Animation Files (*.xsm) ;; All Files (*.*)"
 title = "\n\t\t\t\t\t\t##### GaZoiL #####\n"
-exterr = "Incorrect or corrupted file format ! Please select a correct .elu file \nProgram will stop !"
+elu_exterr = "Incorrect or corrupted file format ! Please select a valid .elu file \nProgram will stop !"
+xsm_exterr = "Incorrect or corrupted file format ! Please select a valid .xsm file \nProgram will stop !"
 err = "Internal error ! Contact admin"
 eluversion = "Elu Version : %s"
 objectstr = "Object : %s"
@@ -526,7 +533,7 @@ def spweight(idx, ite):
 
 print(title)
 elu = openfile()
-headerargs = header(elu)
+headerargs = elu_header(elu)
 
 for i in range(headerargs[1]):
     if(headerargs[0] == "0x5011"):
@@ -545,15 +552,18 @@ for i in range(headerargs[1]):
         Array.extend(objects)
         meta1(elu)
         import_5014(elu)
+
     else:
         print(err)
 
 print("EOF")
 
-#objgen()
-#print("Object generated") #debug
-#parent()
-#elu.close()
+objgen()
+parent()
+elu.close()
+
+xsm = openfile()
+#headerargs = xsm_header(xsm)
 
 #skincluster()
 #skinpercent()
